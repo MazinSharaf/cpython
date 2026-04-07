@@ -448,8 +448,20 @@ class help(Command):
     def do(self) -> None:
         import _sitebuiltins
 
-        with self.reader.suspend():
-            self.reader.msg = _sitebuiltins._Helper()()  # type: ignore[assignment]
+        if getattr(self.reader, "_helping", False):
+            return
+
+        self.reader._helping = True
+        old_paste_mode = self.reader.paste_mode
+        self.reader.paste_mode = False
+
+        try: 
+            with self.reader.suspend():
+                self.reader.msg = _sitebuiltins._Helper()()  # type: ignore[assignment]
+        finally:
+            self.reader.paste_mode = old_paste_mode
+            self.reader._helping = False
+            self.reader.dirty = True
 
 
 class invalid_key(Command):
@@ -484,6 +496,8 @@ class show_history(Command):
 
 class paste_mode(Command):
     def do(self) -> None:
+        if getattr(self.reader, "_helping", False):
+            return
         self.reader.paste_mode = not self.reader.paste_mode
         self.reader.dirty = True
 
