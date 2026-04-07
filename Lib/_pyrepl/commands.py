@@ -448,9 +448,16 @@ class help(Command):
     def do(self) -> None:
         import _sitebuiltins
 
-        with self.reader.suspend():
-            self.reader.msg = _sitebuiltins._Helper()()  # type: ignore[assignment]
+        if getattr(self.reader, "_helping", False):
+            return
 
+        self.reader._helping = True
+
+        try:
+            with self.reader.suspend():
+                self.reader.msg = _sitebuiltins._Helper()()  # type: ignore[assignment]
+        finally:
+            self.reader._helping = False
 
 class invalid_key(Command):
     def do(self) -> None:
